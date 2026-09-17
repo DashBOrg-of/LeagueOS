@@ -1,7 +1,11 @@
-param([string]$LanUrl = 'http://192.168.0.4:8210')
+param([string]$LanUrl)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $env:COMPOSE_PROJECT_NAME = 'dashborg-leagueos'
+$lanIp = (Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp |
+  Where-Object { $_.IPAddress -notmatch '^(127\.|169\.254\.|192\.168\.224\.)' } |
+  Select-Object -First 1 -ExpandProperty IPAddress)
+if (-not $LanUrl) { $LanUrl = "http://$lanIp`:8210" }
 $env:DASHBORG_LAN_URL = $LanUrl.TrimEnd('/')
 docker compose -f (Join-Path $root 'docker-compose.yml') up -d
 for ($i = 0; $i -lt 60; $i++) {
