@@ -1,0 +1,37 @@
+name: dashborg-leagueos
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: dashborg
+      MARIADB_USER: dashborg
+      MARIADB_PASSWORD: dashborg-local-password
+      MARIADB_ROOT_PASSWORD: dashborg-local-root-password
+    volumes:
+      - dashborg-db:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:6.8-php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "0.0.0.0:8210:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: dashborg
+      WORDPRESS_DB_USER: dashborg
+      WORDPRESS_DB_PASSWORD: dashborg-local-password
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_HOME', 'http://192.168.0.4:8210');
+        define('WP_SITEURL', 'http://192.168.0.4:8210');
+        define('DISALLOW_FILE_EDIT', true);
+    volumes:
+      - dashborg-wordpress:/var/www/html
+      - ./wp-content/plugins/dashborg-leagueos:/var/www/html/wp-content/plugins/dashborg-leagueos:ro
+
+volumes:
+  dashborg-db:
+  dashborg-wordpress:
