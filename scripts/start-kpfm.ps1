@@ -14,6 +14,8 @@ wsl.exe -d KPFM -- bash -lc "cd '$quotedRoot' && export DASHBORG_LAN_URL='$quote
 $cmd = "cd '$quotedRoot' && export DASHBORG_LAN_URL='$quotedUrl' && " +
   "for i in `$(seq 1 60); do docker compose -p dashborg-leagueos exec -T wordpress wp db check --allow-root >/dev/null 2>&1 && break; sleep 2; done; " +
   "docker compose -p dashborg-leagueos exec -T wordpress wp core is-installed --allow-root >/dev/null 2>&1 || docker compose -p dashborg-leagueos exec -T wordpress wp core install --url='$quotedUrl' --title='DashBOrg LeagueOS' --admin_user=localadmin --admin_password='Dashborg-Local-2026!' --admin_email='localadmin@dashborg.local' --skip-email --allow-root; " +
-  "docker compose -p dashborg-leagueos exec -T wordpress wp plugin activate dashborg-leagueos --allow-root"
+  "docker compose -p dashborg-leagueos exec -T wordpress wp plugin activate dashborg-leagueos --allow-root; " +
+  "docker compose -p dashborg-leagueos exec -T wordpress wp rewrite structure '/%postname%/' --hard --allow-root; " +
+  "docker compose -p dashborg-leagueos exec -T wordpress wp rewrite flush --hard --allow-root"
 wsl.exe -d KPFM -- bash -lc $cmd
 Write-Host "DashBOrg LeagueOS ready at $LanUrl"

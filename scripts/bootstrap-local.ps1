@@ -18,4 +18,6 @@ if ($LASTEXITCODE -ne 0) {
   docker compose -f (Join-Path $root 'docker-compose.yml') exec -T wordpress wp core install --url="$($env:DASHBORG_LAN_URL)" --title='DashBOrg LeagueOS' --admin_user=localadmin --admin_password='Dashborg-Local-2026!' --admin_email='localadmin@dashborg.local' --skip-email --allow-root
 }
 docker compose -f (Join-Path $root 'docker-compose.yml') exec -T wordpress wp plugin activate dashborg-leagueos --allow-root
+docker compose -f (Join-Path $root 'docker-compose.yml') exec -T wordpress wp rewrite structure '/%postname%/' --hard --allow-root
+docker compose -f (Join-Path $root 'docker-compose.yml') exec -T wordpress wp rewrite flush --hard --allow-root
 Write-Host "DashBOrg LeagueOS ready at $($env:DASHBORG_LAN_URL)"
