@@ -1,40 +1,47 @@
-name: dashborg-leagueos
-
 services:
   db:
     image: mariadb:11.4
     restart: unless-stopped
     environment:
-      MARIADB_DATABASE: dashborg
-      MARIADB_USER: dashborg
-      MARIADB_PASSWORD: dashborg-local-password
-      MARIADB_ROOT_PASSWORD: dashborg-local-root-password
+      MARIADB_DATABASE: ${DASHBORG_DB_NAME:-dashborg}
+      MARIADB_USER: ${DASHBORG_DB_USER:-dashborg}
+      MARIADB_PASSWORD: ${DASHBORG_DB_PASSWORD:?DASHBORG_DB_PASSWORD must be supplied by the local fixture environment}
+      MARIADB_ROOT_PASSWORD: ${DASHBORG_DB_ROOT_PASSWORD:?DASHBORG_DB_ROOT_PASSWORD must be supplied by the local fixture environment}
     volumes:
-      - dashborg-db:/var/lib/mysql
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h localhost -u root -p$${MARIADB_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   wordpress:
     build:
       context: .
       dockerfile: Dockerfile
-    image: dashborg-leagueos:local
     restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
-      - "0.0.0.0:8210:80"
+      - "${DASHBORG_BIND_ADDRESS:-0.0.0.0}:${DASHBORG_HTTP_PORT:?DASHBORG_HTTP_PORT must be supplied by the local launcher}:80"
     environment:
       WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_NAME: dashborg
-      WORDPRESS_DB_USER: dashborg
-      WORDPRESS_DB_PASSWORD: dashborg-local-password
+      WORDPRESS_DB_NAME: ${DASHBORG_DB_NAME:-dashborg}
+      WORDPRESS_DB_USER: ${DASHBORG_DB_USER:-dashborg}
+      WORDPRESS_DB_PASSWORD: ${DASHBORG_DB_PASSWORD:?DASHBORG_DB_PASSWORD must be supplied by the local fixture environment}
+      DASHBORG_LAN_URL: ${DASHBORG_LAN_URL:?DASHBORG_LAN_URL must be supplied by the local launcher}
+      DASHBORG_WP_ADMIN_USER: ${DASHBORG_WP_ADMIN_USER:-localadmin}
+      DASHBORG_WP_ADMIN_PASSWORD: ${DASHBORG_WP_ADMIN_PASSWORD:?DASHBORG_WP_ADMIN_PASSWORD must be supplied by the local fixture environment}
+      DASHBORG_WP_ADMIN_EMAIL: ${DASHBORG_WP_ADMIN_EMAIL:-localadmin@dashborg.local}
       WORDPRESS_CONFIG_EXTRA: |
-        define('WP_HOME', '${DASHBORG_LAN_URL:-http://127.0.0.1:8210}');
-        define('WP_SITEURL', '${DASHBORG_LAN_URL:-http://127.0.0.1:8210}');
+        define('WP_HOME', '${DASHBORG_LAN_URL}');
+        define('WP_SITEURL', '${DASHBORG_LAN_URL}');
         define('DISALLOW_FILE_EDIT', true);
     volumes:
-      - dashborg-wordpress:/var/www/html
+      - wordpress-data:/var/www/html
       - ./wp-content/plugins/dashborg-leagueos:/var/www/html/wp-content/plugins/dashborg-leagueos:ro
 
 volumes:
-  dashborg-db:
-  dashborg-wordpress:
+  db-data:
+  wordpress-data:
